@@ -1,6 +1,6 @@
 # PROGRESS — FoodMart E-Commerce API
 
-## Status: Session 5 — Categories & Foods (selesai)
+## Status: Session 6 — Cart (selesai)
 
 ---
 
@@ -8,7 +8,7 @@
 (kosong)
 
 ## Belum Dimulai
-- [ ] Cart & Orders
+- [ ] Orders
 - [ ] Rate limiting, Swagger, Polish
 
 ## Selesai
@@ -40,7 +40,12 @@
 - [x] src/services/foodService.js
 - [x] src/controllers/foodController.js
 - [x] src/routes/foodRoutes.js
-- [x] Update src/routes/index.js (categories & foods)
+- [x] src/validators/cartValidator.js
+- [x] src/repositories/cartRepository.js
+- [x] src/services/cartService.js
+- [x] src/controllers/cartController.js
+- [x] src/routes/cartRoutes.js
+- [x] Update src/routes/index.js (categories, foods, cart)
 
 ## Catatan & Keputusan Teknis
 - Supabase Storage untuk gambar produk (bukan Cloudinary)
@@ -52,5 +57,8 @@
 - Zod untuk validasi
 - ES Module (import/export) di semua file
 - Middleware export: authMiddleware (bukan protect), roleMiddleware (bukan adminOnly)
-- isAvailable bersifat manual — mendukung skenario pre-order (tidak otomatis false saat stock 0)
-- imageKey disimpan di DB untuk keperluan hapus gambar dari Supabase Storage
+- isAvailable bersifat manual — mendukung skenario pre-order
+- imageKey disimpan di DB untuk hapus file dari Supabase Storage
+- Cart dibuat otomatis saat user pertama kali tambah item
+- Update quantity 0 = otomatis hapus item dari cart
+- Jika tambah item yang sudah ada di cart, quantity di-increment

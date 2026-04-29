@@ -5,8 +5,8 @@
 ---
 
 ## Status Saat Ini
-**Selesai sampai Session 5 (Categories & Foods)**
-Siap lanjut ke **Session 6 — Cart**
+**Selesai sampai Session 6 (Cart)**
+Siap lanjut ke **Session 7 — Orders**
 
 ---
 
@@ -61,6 +61,15 @@ Siap lanjut ke **Session 6 — Cart**
 - ✅ Update `src/routes/index.js` — mount /api/v1/categories & /api/v1/foods
 - ✅ Semua endpoint ditest di Postman dan berhasil
 
+### Session 6 — Cart
+- ✅ `src/validators/cartValidator.js` — addToCartSchema, updateCartItemSchema
+- ✅ `src/repositories/cartRepository.js`
+- ✅ `src/services/cartService.js`
+- ✅ `src/controllers/cartController.js`
+- ✅ `src/routes/cartRoutes.js` — semua route protected
+- ✅ Update `src/routes/index.js` — mount /api/v1/cart
+- ✅ Semua endpoint ditest di Postman dan berhasil
+
 ---
 
 ## Keputusan Teknis Penting
@@ -81,6 +90,9 @@ Siap lanjut ke **Session 6 — Cart**
 | Middleware role | Export named: `roleMiddleware` (bukan `adminOnly`) |
 | isAvailable | Manual — tidak otomatis false saat stock 0 (support pre-order) |
 | imageKey | Disimpan di DB untuk hapus file dari Storage |
+| Cart | Dibuat otomatis saat user pertama kali tambah item |
+| Update quantity 0 | Otomatis hapus item dari cart (auto-delete) |
+| Duplicate cart item | Quantity di-increment, bukan buat item baru |
 
 ---
 
@@ -108,22 +120,25 @@ main (production)
 └── feat/3-utils (merged)
 └── feat/4-auth (merged)
 └── feat/5-categories-foods (merged)
-└── feat/6-cart ← berikutnya
+└── feat/6-cart (merged)
+└── feat/7-orders ← berikutnya
 
 Format commit: Conventional Commits
 
-feat: add cart management
-fix: handle duplicate cart item
+feat: add order management
+fix: handle insufficient stock on checkout
 
 ---
 
 ## Yang Belum Dikerjakan
 
-### Session 6 — Cart
-- cartRepository, cartService, cartController, cartRoutes
-- Business rules: satu user satu cart, auto-create cart, cek stok & isAvailable
-
 ### Session 7 — Orders
+- orderRepository, orderService, orderController, orderRoutes
+- Checkout dari cart → buat order → kurangi stock → kosongkan cart
+- Update status order (admin)
+- List order milik user
+- List semua order (admin)
+
 ### Session 8 — Polish
 - Rate limiting
 - Swagger docs
@@ -137,4 +152,4 @@ fix: handle duplicate cart item
 2. Paste isi `docs/PRD.md`
 3. Paste isi `docs/ARCHITECTURE.md`
 4. Paste isi `docs/PROGRESS.md`
-5. Bilang: "Lanjut ke Session 6 — Cart"
+5. Bilang: "Lanjut ke Session 7 — Orders"
