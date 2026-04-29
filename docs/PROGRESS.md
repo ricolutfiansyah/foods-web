@@ -1,6 +1,6 @@
 # PROGRESS — FoodMart E-Commerce API
 
-## Status: Session 6 — Cart (selesai)
+## Status: Session 7 — Orders (selesai)
 
 ---
 
@@ -8,8 +8,9 @@
 (kosong)
 
 ## Belum Dimulai
-- [ ] Orders
-- [ ] Rate limiting, Swagger, Polish
+- [ ] Rate limiting
+- [ ] Swagger docs
+- [ ] Test semua endpoint
 
 ## Selesai
 - [x] Inisialisasi project (package.json, struktur folder)
@@ -45,7 +46,12 @@
 - [x] src/services/cartService.js
 - [x] src/controllers/cartController.js
 - [x] src/routes/cartRoutes.js
-- [x] Update src/routes/index.js (categories, foods, cart)
+- [x] src/validators/orderValidator.js
+- [x] src/repositories/orderRepository.js
+- [x] src/services/orderService.js
+- [x] src/controllers/orderController.js
+- [x] src/routes/orderRoutes.js
+- [x] Update src/routes/index.js (semua routes + /api/v1/admin/orders)
 
 ## Catatan & Keputusan Teknis
 - Supabase Storage untuk gambar produk (bukan Cloudinary)
@@ -62,3 +68,6 @@
 - Cart dibuat otomatis saat user pertama kali tambah item
 - Update quantity 0 = otomatis hapus item dari cart
 - Jika tambah item yang sudah ada di cart, quantity di-increment
+- priceAtOrder disimpan dari harga food saat checkout (bukan harga sekarang)
+- Semua operasi checkout dalam satu transaksi Prisma (atomic)
+- GET /api/v1/admin/orders di-mount langsung di routes/index.js (bukan di orderRoutes)
