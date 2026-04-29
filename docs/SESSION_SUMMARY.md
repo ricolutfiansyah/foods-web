@@ -1,155 +1,84 @@
-# Session Summary — FoodMart E-Commerce API
-> Gunakan dokumen ini sebagai konteks saat memulai chat baru.
-> Paste dokumen ini + isi docs/PRD.md + docs/ARCHITECTURE.md + docs/PROGRESS.md
+## Yang Dikerjakan di Chat Ini
+
+### Session 5 — Categories & Foods ✅
+File yang dibuat:
+- `src/config/supabase.js`
+- `src/middlewares/upload.js`
+- `src/validators/foodValidator.js`
+- `src/repositories/categoryRepository.js`
+- `src/services/categoryService.js`
+- `src/controllers/categoryController.js`
+- `src/routes/categoryRoutes.js`
+- `src/repositories/foodRepository.js`
+- `src/services/foodService.js`
+- `src/controllers/foodController.js`
+- `src/routes/foodRoutes.js`
+- Update `src/routes/index.js`
+
+Bug yang ditemukan & diperbaiki:
+- Import middleware salah — harusnya `authMiddleware` dan `roleMiddleware`, bukan `protect` dan `adminOnly`
+
+### Session 6 — Cart ✅
+File yang dibuat:
+- `src/validators/cartValidator.js`
+- `src/repositories/cartRepository.js`
+- `src/services/cartService.js`
+- `src/controllers/cartController.js`
+- `src/routes/cartRoutes.js`
+- Update `src/routes/index.js`
+
+Keputusan bisnis baru:
+- Update quantity 0 = otomatis hapus item dari cart (auto-delete)
+- Duplicate item di cart = quantity di-increment, bukan buat item baru
+
+### Session 7 — Orders ✅
+File yang dibuat:
+- `src/validators/orderValidator.js`
+- `src/repositories/orderRepository.js`
+- `src/services/orderService.js`
+- `src/controllers/orderController.js`
+- `src/routes/orderRoutes.js`
+- Update `src/routes/index.js`
+
+Bug yang ditemukan & diperbaiki:
+- Route `/admin/orders` dipindah dari `orderRoutes.js` ke `routes/index.js` supaya URL-nya jadi `/api/v1/admin/orders` sesuai PRD
 
 ---
 
-## Status Saat Ini
-**Selesai sampai Session 6 (Cart)**
-Siap lanjut ke **Session 7 — Orders**
-
----
-
-## Yang Sudah Selesai
-
-### Session 1 — Foundation
-- ✅ Inisialisasi project Node.js + Express
-- ✅ Struktur folder sesuai ARCHITECTURE.md
-- ✅ `.env.example` dengan semua variabel
-- ✅ `src/index.js` + `src/app.js`
-- ✅ Health check endpoint `GET /health`
-- ✅ Middleware global: cors, helmet, json parser, cookie-parser
-
-### Session 2 — Prisma Schema
-- ✅ `prisma/schema.prisma` dengan semua model:
-  User, RefreshToken, Category, Food, Cart, CartItem, Order, OrderItem
-- ✅ `@@unique([cartId, foodId])` di CartItem
-- ✅ Migration berhasil ke Supabase
-- ✅ `src/config/prisma.js` (Prisma client singleton)
-
-### Session 3 — Utils
-- ✅ `src/utils/asyncHandler.js`
-- ✅ `src/utils/AppError.js`
-- ✅ `src/utils/response.js` — format `{ success, message, data, meta }`
-- ✅ `src/utils/jwt.js` — signAccessToken, signRefreshToken, verifyToken, hashToken, fingerprintRequest
-- ✅ `src/utils/pagination.js`
-
-### Session 4 — Auth
-- ✅ `src/validators/authValidator.js`
-- ✅ `src/repositories/authRepository.js`
-- ✅ `src/services/authService.js` — rotation + reuse detection + fingerprint
-- ✅ `src/controllers/authController.js`
-- ✅ `src/routes/authRoutes.js`
-- ✅ `src/middlewares/authMiddleware.js` — export: `authMiddleware`
-- ✅ `src/middlewares/roleMiddleware.js` — export: `roleMiddleware`
-- ✅ `src/middlewares/errorMiddleware.js`
-- ✅ `src/routes/index.js` — mount /api/v1/auth
-- ✅ Semua endpoint ditest di Postman dan berhasil
-
-### Session 5 — Categories & Foods
-- ✅ `src/config/supabase.js`
-- ✅ `src/middlewares/upload.js` — multer memoryStorage, max 2MB, JPEG/PNG/WebP
-- ✅ `src/validators/foodValidator.js` — createFoodSchema, updateFoodSchema
-- ✅ `src/repositories/categoryRepository.js`
-- ✅ `src/services/categoryService.js` — auto-generate slug
-- ✅ `src/controllers/categoryController.js`
-- ✅ `src/routes/categoryRoutes.js`
-- ✅ `src/repositories/foodRepository.js` — filter by search, categoryId, isAvailable
-- ✅ `src/services/foodService.js` — upload/delete gambar ke Supabase Storage
-- ✅ `src/controllers/foodController.js`
-- ✅ `src/routes/foodRoutes.js`
-- ✅ Update `src/routes/index.js` — mount /api/v1/categories & /api/v1/foods
-- ✅ Semua endpoint ditest di Postman dan berhasil
-
-### Session 6 — Cart
-- ✅ `src/validators/cartValidator.js` — addToCartSchema, updateCartItemSchema
-- ✅ `src/repositories/cartRepository.js`
-- ✅ `src/services/cartService.js`
-- ✅ `src/controllers/cartController.js`
-- ✅ `src/routes/cartRoutes.js` — semua route protected
-- ✅ Update `src/routes/index.js` — mount /api/v1/cart
-- ✅ Semua endpoint ditest di Postman dan berhasil
-
----
-
-## Keputusan Teknis Penting
+## Keputusan Teknis Baru di Chat Ini
 
 | Hal | Keputusan |
 |-----|-----------|
-| Module system | ES Module (import/export) di semua file |
-| Refresh token | Rotation + Reuse Detection + httpOnly cookie |
-| Token storage | Di-hash SHA-256 sebelum disimpan ke DB |
-| Fingerprint | Hash dari User-Agent untuk binding device |
-| Reuse detected | Revoke seluruh family token → user login ulang |
-| Upload gambar | Supabase Storage bucket `foods` |
-| Validasi | Zod — safeParse di controller |
-| Error format Zod | `err.errors.map(e => ({ field, message }))` |
-| PK | UUID semua tabel |
-| ORM | Prisma v5 |
 | Middleware auth | Export named: `authMiddleware` (bukan `protect`) |
 | Middleware role | Export named: `roleMiddleware` (bukan `adminOnly`) |
-| isAvailable | Manual — tidak otomatis false saat stock 0 (support pre-order) |
-| imageKey | Disimpan di DB untuk hapus file dari Storage |
-| Cart | Dibuat otomatis saat user pertama kali tambah item |
-| Update quantity 0 | Otomatis hapus item dari cart (auto-delete) |
-| Duplicate cart item | Quantity di-increment, bukan buat item baru |
+| isAvailable | Manual — support pre-order, tidak otomatis false saat stock 0 |
+| Cart auto-create | Cart dibuat otomatis saat user pertama kali tambah item |
+| Update quantity 0 | Otomatis hapus item dari cart |
+| Duplicate cart item | Quantity di-increment |
+| priceAtOrder | Snapshot harga saat checkout, bukan harga sekarang |
+| Checkout transaksi | Semua operasi dalam satu `prisma.$transaction` |
+| Admin orders route | Di-mount di `routes/index.js`, bukan di `orderRoutes.js` |
 
 ---
 
-## Stack & Tools
+## Hal-hal yang Dipelajari di Chat Ini
 
-| Komponen | Pilihan |
-|----------|---------|
-| Runtime | Node.js |
-| Framework | Express.js |
-| ORM | Prisma + Supabase (PostgreSQL) |
-| Auth | JWT access token (15m) + refresh token (7d) |
-| Upload | Supabase Storage |
-| Validasi | Zod |
-| Docs | Swagger (belum dibuat) |
-| IDE | Google Antigravity |
-| Git | Per fase, PR ke main |
+- **Bucket Supabase** — container untuk menyimpan file, harus dibuat manual di dashboard
+- **`include` Prisma** — setara `populate` di Mongoose, pakai relasi dari schema
+- **`{ data: publicUrlData }`** — rename saat destructuring
+- **`coerce` di Zod** — paksa konversi tipe data sebelum validasi
+- **`take` vs `limit`** — Prisma pakai `take`, fungsinya sama dengan SQL `LIMIT`
+- **`Promise.all`** — jalankan dua query paralel sekaligus
+- **`prisma.$transaction`** — semua operasi atomic, kalau satu gagal semua rollback
+- **Nested write Prisma** — buat Order + OrderItems sekaligus, `orderId` otomatis terhubung
+- **`tx`** — transaction client dari Prisma, sama seperti `prisma` tapi terikat transaksi
 
 ---
 
-## Git Workflow yang Dipakai
-
-main (production)
-└── feat/1-setup-foundation (merged)
-└── feat/2-prisma-schema (merged)
-└── feat/3-utils (merged)
-└── feat/4-auth (merged)
-└── feat/5-categories-foods (merged)
-└── feat/6-cart (merged)
-└── feat/7-orders ← berikutnya
-
-Format commit: Conventional Commits
-
-feat: add order management
-fix: handle insufficient stock on checkout
-
----
-
-## Yang Belum Dikerjakan
-
-### Session 7 — Orders
-- orderRepository, orderService, orderController, orderRoutes
-- Checkout dari cart → buat order → kurangi stock → kosongkan cart
-- Update status order (admin)
-- List order milik user
-- List semua order (admin)
-
-### Session 8 — Polish
+## Status Sekarang
+Selesai sampai Session 7. Siap lanjut ke **Session 8 — Polish:**
 - Rate limiting
 - Swagger docs
 - Test semua endpoint
 
 ---
-
-## Cara Lanjut di Chat Baru
-
-1. Paste dokumen ini
-2. Paste isi `docs/PRD.md`
-3. Paste isi `docs/ARCHITECTURE.md`
-4. Paste isi `docs/PROGRESS.md`
-5. Bilang: "Lanjut ke Session 7 — Orders"

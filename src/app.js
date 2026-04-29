@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import routes from './routes/index.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
+import { globalLimiter } from './middlewares/rateLimiter.js';
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+app.use(globalLimiter);
 
 // Health Check Route
 app.get('/health', (req, res) => {
