@@ -66,6 +66,7 @@
 - [x] tests/integration/food.test.js (12 integration tests)
 - [x] tests/integration/cart.test.js (10 integration tests)
 - [x] tests/integration/order.test.js (14 integration tests)
+- [x] .github/workflows/ci.yml (GitHub Actions CI pipeline)
 
 ## Catatan & Keputusan Teknis
 - Supabase Storage untuk gambar produk (bukan Cloudinary)
@@ -98,3 +99,7 @@
 - Cleanup data di afterAll setiap test suite sesuai urutan foreign key constraint
 - Role ADMIN di-set langsung via Prisma di beforeAll test
 - Total: 69 tests, semua pass
+- CI via GitHub Actions — trigger pada pull_request ke main
+- Prisma migrate deploy dijalankan di CI sebelum test
+- testTimeout dinaikkan ke 30000ms untuk CI environment
+- Password connection string perlu di-encode jika mengandung karakter spesial
