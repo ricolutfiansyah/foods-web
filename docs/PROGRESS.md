@@ -1,6 +1,6 @@
 # PROGRESS — FoodMart E-Commerce API
 
-## Status: Session 9 — Swagger Docs (selesai)
+## Status: COMPLETED ✅
 
 ---
 
@@ -8,7 +8,7 @@
 (kosong)
 
 ## Belum Dimulai
-- [ ] Test semua endpoint
+(kosong)
 
 ## Selesai
 - [x] Inisialisasi project (package.json, struktur folder)
@@ -58,6 +58,14 @@
 - [x] Update src/routes/foodRoutes.js (JSDoc)
 - [x] Update src/routes/cartRoutes.js (JSDoc)
 - [x] Update src/routes/orderRoutes.js (JSDoc)
+- [x] babel.config.json (konfigurasi Babel untuk ES Module di Jest)
+- [x] tests/setup.js (override DATABASE_URL ke DATABASE_URL_TEST)
+- [x] tests/unit/utils.test.js (12 unit tests)
+- [x] tests/integration/auth.test.js (10 integration tests)
+- [x] tests/integration/category.test.js (11 integration tests)
+- [x] tests/integration/food.test.js (12 integration tests)
+- [x] tests/integration/cart.test.js (10 integration tests)
+- [x] tests/integration/order.test.js (14 integration tests)
 
 ## Catatan & Keputusan Teknis
 - Supabase Storage untuk gambar produk (bukan Cloudinary)
@@ -83,3 +91,10 @@
 - swagger-jsdoc scan otomatis semua file di src/routes/*.js
 - Base URL dibaca dari env BASE_URL, fallback ke http://localhost:3000
 - userRoutes.js dibuat tapi belum di-mount — fitur user management belum dikerjakan
+- Jest + Supertest untuk testing
+- Babel untuk support ES Module di Jest
+- --runInBand agar test berjalan berurutan, mencegah race condition antar test suite
+- Database test terpisah di Supabase, dikonfigurasi via DATABASE_URL_TEST di .env
+- Cleanup data di afterAll setiap test suite sesuai urutan foreign key constraint
+- Role ADMIN di-set langsung via Prisma di beforeAll test
+- Total: 69 tests, semua pass
