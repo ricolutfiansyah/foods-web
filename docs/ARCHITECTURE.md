@@ -41,7 +41,8 @@ foodmart-api/
 │   │   ├── authMiddleware.js   # verifikasi JWT
 │   │   ├── roleMiddleware.js   # cek role (admin/user)
 │   │   ├── errorMiddleware.js  # global error handler
-│   │   ├── rateLimiter.js      # rate limiting config
+│   │   ├── rateLimiter.js      # rate limiting via @upstash/ratelimit (Sliding Window)
+│   │   ├── cacheMiddleware.js  # cache middleware + invalidateCache helper
 │   │   └── upload.js           # middleware Supabase Storage upload
 │   ├── validators/
 │   │   ├── authValidator.js
@@ -56,10 +57,24 @@ foodmart-api/
 │   │   └── pagination.js       # helper pagination query
 │   ├── config/
 │   │   ├── prisma.js           # Prisma client singleton
+│   │   ├── redis.js            # Upstash Redis client (Redis.fromEnv())
 │   │   ├── supabase.js         # Supabase client (untuk Storage)
 │   │   └── swagger.js          # konfigurasi Swagger
 │   └── docs/
 │       └── swagger.yaml        # OpenAPI spec (opsional, bisa inline)
+├── tests/
+│   ├── integration/
+│   │   ├── auth.test.js
+│   │   ├── category.test.js
+│   │   ├── food.test.js
+│   │   ├── cart.test.js
+│   │   └── order.test.js
+│   ├── unit/
+│   │   └── utils.test.js
+│   └── setup.js               # konfigurasi Jest + database test
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # CI pipeline (install → migrate → test)
 ├── .env
 ├── .env.example
 ├── .gitignore
@@ -72,8 +87,9 @@ foodmart-api/
 
 ```
 Request
-  → Rate Limiter
+  → Rate Limiter (Upstash Ratelimit — Sliding Window)
   → Router
+  → Cache Middleware (Upstash Redis) ← khusus GET /foods & /categories
   → Validator (Zod)
   → Auth/Role Middleware (jika butuh)
   → Controller (terima req, kirim res)
@@ -128,7 +144,6 @@ Semua endpoint wajib menggunakan format ini:
 - Error yang tidak tertangkap masuk ke `errorMiddleware` di `app.js`
 - Error Prisma (P2002, P2025, dll) di-handle di errorMiddleware secara terpusat
 
-Contoh AppError:
 ```js
 // utils/AppError.js
 class AppError extends Error {
@@ -155,7 +170,7 @@ Register
 Login
   → cek email terdaftar
   → verifikasi password (bcrypt.compare)
-  → buat familyId baru (uuid) ← penanda satu sesi login
+  → buat familyId baru (uuid)
   → buat access token (15m, JWT)
   → buat refresh token (JWT, 7d)
   → hash refresh token sebelum disimpan ke DB
@@ -170,7 +185,6 @@ Refresh Token
   → cek isUsed:
       → kalau true (REUSE DETECTED!):
           → revoke semua token dengan familyId yang sama
-          → log kejadian (IP, userAgent, waktu)
           → throw 401 "Session compromised, please login again"
   → cek fingerprint cocok dengan request saat ini
       → kalau tidak cocok → revoke family → throw 401
@@ -181,12 +195,12 @@ Refresh Token
 
 Logout
   → baca refresh token dari cookie
-  → tandai isUsed = true di DB (atau hapus seluruh family jika "logout semua device")
+  → tandai isUsed = true di DB
   → clear httpOnly cookie
 ```
 
 ### Kenapa httpOnly Cookie?
-- Refresh token tidak bisa diakses JavaScript → aman dari serangan XSS
+- Refresh token tidak bisa diakses JavaScript → aman dari XSS
 - `sameSite: strict` → proteksi CSRF
 - `secure: true` → hanya dikirim via HTTPS (aktifkan di production)
 
@@ -194,11 +208,50 @@ Logout
 - Kalau DB bocor, attacker tidak bisa langsung pakai token mentah
 - Simpan hash (SHA-256) di DB, bandingkan saat refresh
 
-```js
-// Contoh hash token sebelum simpan
-const crypto = require('crypto')
-const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+---
+
+## Caching (Upstash Redis)
+
 ```
+GET /foods atau /categories
+  → cacheMiddleware cek Redis
+      → Cache HIT  → return langsung dari Redis (controller tidak disentuh)
+      → Cache MISS → lanjut ke controller → response di-intercept → simpan ke Redis (TTL 60s)
+
+POST / PATCH / DELETE /foods atau /categories
+  → controller jalan
+  → invalidateCache(...keys) dipanggil setelah operasi sukses
+  → key yang relevan dihapus dari Redis
+```
+
+**Cache keys:**
+- `foods:all` — list semua food
+- `foods:{id}` — detail food by id
+- `categories:all` — list semua category
+- `categories:{id}` — detail category by id
+
+**Aturan:**
+- Cache error tidak block request — tetap `next()`
+- `invalidateCache` dipanggil di controller, bukan di middleware
+- Cache hanya disimpan kalau `body.success === true`
+
+---
+
+## Rate Limiting (Upstash Ratelimit)
+
+Menggunakan algoritma **Sliding Window** via `@upstash/ratelimit`.
+
+| Limiter | Limit | Window | Endpoint |
+|---|---|---|---|
+| `globalLimiter` | 100 req | 15 menit | semua endpoint |
+| `authLimiter` | 10 req | 15 menit | login, register |
+| `strictLimiter` | 30 req | 15 menit | refresh token |
+
+**Aturan:**
+- Skip otomatis saat `NODE_ENV === 'development'` atau `'test'`
+- Kalau Redis error → tetap `next()`, tidak block request
+- Identifier pakai IP address (`req.ip` atau `x-forwarded-for`)
+- Response header `X-RateLimit-Limit` dan `X-RateLimit-Remaining` dikirim ke client
 
 ---
 
@@ -210,8 +263,39 @@ Request dengan file
   → service uploadToSupabase(buffer, filename)
       → supabase.storage.from('foods').upload(path, buffer)
   → dapat publicUrl → simpan ke kolom imageUrl di DB
+  → imageKey disimpan di DB untuk keperluan hapus file
   → saat hapus produk → supabase.storage.from('foods').remove([imageKey])
 ```
+
+---
+
+## Testing
+
+- **Unit tests** — AppError, pagination, jwt utils
+- **Integration tests** — semua endpoint via Supertest
+- Database test terpisah (`DATABASE_URL_TEST`) di Supabase
+- `--runInBand` untuk mencegah race condition antar test suite
+- `beforeAll` pakai `upsert` untuk data test — mencegah unique constraint error di CI
+- Rate limiter & cache middleware otomatis skip saat `NODE_ENV === 'test'`
+
+```
+Tests: 69 passed (12 unit + 57 integration)
+```
+
+---
+
+## CI/CD (GitHub Actions)
+
+**Trigger:** Pull Request ke `main`
+
+**Pipeline:**
+```
+install dependencies (npm ci)
+  → run Prisma migrations (DATABASE_URL_TEST)
+  → run tests (NODE_ENV=test)
+```
+
+**Env:** semua via GitHub Secrets, Upstash env di-set di level job supaya tersedia saat module initialization.
 
 ---
 
@@ -225,16 +309,22 @@ NODE_ENV=development
 # Database
 DATABASE_URL=postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:6543/postgres?pgbouncer=true
 DIRECT_URL=postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:5432/postgres
+DATABASE_URL_TEST=postgresql://...   # database terpisah untuk testing
+DIRECT_URL_TEST=postgresql://...
 
 # Supabase (untuk Storage)
 SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_SERVICE_KEY=sb_secret_...   ← pakai Secret key (sb_secret_), bukan Publishable key
+SUPABASE_SERVICE_KEY=sb_secret_...   # pakai Secret key, bukan Publishable key
 
 # JWT
 JWT_SECRET=your-super-secret-key
 JWT_EXPIRES_IN=15m
 REFRESH_TOKEN_SECRET=your-refresh-secret
 REFRESH_TOKEN_EXPIRES_IN=7d
+
+# Upstash Redis
+UPSTASH_REDIS_REST_URL=https://xxxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=xxxx
 ```
 
 ---
@@ -248,12 +338,13 @@ REFRESH_TOKEN_EXPIRES_IN=7d
     "prisma": "^5.x",
     "@prisma/client": "^5.x",
     "@supabase/supabase-js": "^2.x",
+    "@upstash/redis": "^x.x",
+    "@upstash/ratelimit": "^x.x",
     "bcryptjs": "^2.x",
     "jsonwebtoken": "^9.x",
     "cookie-parser": "^1.x",
     "zod": "^3.x",
     "multer": "^1.x",
-    "express-rate-limit": "^7.x",
     "swagger-ui-express": "^5.x",
     "swagger-jsdoc": "^6.x",
     "dotenv": "^16.x",
@@ -261,7 +352,10 @@ REFRESH_TOKEN_EXPIRES_IN=7d
     "helmet": "^7.x"
   },
   "devDependencies": {
-    "nodemon": "^3.x"
+    "nodemon": "^3.x",
+    "jest": "^29.x",
+    "supertest": "^6.x",
+    "cross-env": "^7.x"
   }
 }
 ```
