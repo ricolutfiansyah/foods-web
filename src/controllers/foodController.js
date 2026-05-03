@@ -2,6 +2,7 @@ import * as foodService from '../services/foodService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendResponse } from '../utils/response.js';
 import { createFoodSchema, updateFoodSchema } from '../validators/foodValidator.js';
+import { invalidateCache } from '../middlewares/cacheMiddleware.js';
 
 export const getAllFoods = asyncHandler(async (req, res) => {
     const { data, meta } = await foodService.getAllFoods(req.query);
@@ -21,6 +22,7 @@ export const createFood = asyncHandler(async (req, res) => {
     }
 
     const food = await foodService.createFood(parsed.data, req.file);
+    await invalidateCache('foods:all');
     sendResponse(res, 201, 'Food created successfully', food);
 });
 
@@ -32,10 +34,12 @@ export const updateFood = asyncHandler(async (req, res) => {
     }
 
     const food = await foodService.updateFood(req.params.id, parsed.data, req.file);
+    await invalidateCache('foods:all', `foods:${req.params.id}`);
     sendResponse(res, 200, 'Food updated successfully', food);
 });
 
 export const deleteFood = asyncHandler(async (req, res) => {
     await foodService.deleteFood(req.params.id);
+    await invalidateCache('foods:all', `foods:${req.params.id}`);
     sendResponse(res, 200, 'Food deleted successfully');
 });

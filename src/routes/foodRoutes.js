@@ -3,6 +3,7 @@ import * as foodController from '../controllers/foodController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { roleMiddleware } from '../middlewares/roleMiddleware.js';
 import upload from '../middlewares/upload.js';
+import { cacheMiddleware } from '../middlewares/cacheMiddleware.js';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ const router = Router();
  *       404:
  *         description: Not Found
  */
-router.get('/', foodController.getAllFoods);
+router.get('/', cacheMiddleware('foods:all', 60), foodController.getAllFoods);
 
 /**
  * @swagger
@@ -67,7 +68,7 @@ router.get('/', foodController.getAllFoods);
  *       404:
  *         description: Not Found
  */
-router.get('/:id', foodController.getFoodById);
+router.get('/:id', cacheMiddleware((req) => `foods:${req.params.id}`, 60), foodController.getFoodById);
 
 /**
  * @swagger

@@ -67,6 +67,12 @@
 - [x] tests/integration/cart.test.js (10 integration tests)
 - [x] tests/integration/order.test.js (14 integration tests)
 - [x] .github/workflows/ci.yml (GitHub Actions CI pipeline)
+- [x] src/middlewares/cacheMiddleware.js (cacheMiddleware + invalidateCache helper)
+- [x] Update src/routes/foodRoutes.js (pasang cacheMiddleware di GET routes)
+- [x] Update src/routes/categoryRoutes.js (pasang cacheMiddleware di GET routes)
+- [x] Update src/controllers/foodController.js (cache invalidation di POST/PATCH/DELETE)
+- [x] Update src/controllers/categoryController.js (cache invalidation di POST/PATCH/DELETE)
+- [x] Update src/middlewares/rateLimiter.js (RedisStore dari rate-limit-redis)
 
 ## Catatan & Keputusan Teknis
 - Supabase Storage untuk gambar produk (bukan Cloudinary)
@@ -103,3 +109,11 @@
 - Prisma migrate deploy dijalankan di CI sebelum test
 - testTimeout dinaikkan ke 30000ms untuk CI environment
 - Password connection string perlu di-encode jika mengandung karakter spesial
+- Cache middleware intercept res.json untuk capture response sebelum dikirim
+- Hanya cache response dengan body.success === true
+- Redis error di cache middleware tidak block request — fallback ke next()
+- Cache key bisa static string atau function (req) => string untuk dynamic key
+- Cache invalidation dilakukan di controller, bukan di middleware
+- invalidateCache helper mendukung multiple keys sekaligus
+- Rate limiter menggunakan RedisStore dari rate-limit-redis + sendCommand adapter untuk @upstash/redis
+- Prefix 'rl:' digunakan untuk rate limiter keys di Redis agar tidak bentrok dengan cache keys
