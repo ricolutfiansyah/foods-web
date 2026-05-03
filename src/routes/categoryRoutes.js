@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as categoryController from '../controllers/categoryController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { roleMiddleware } from '../middlewares/roleMiddleware.js';
+import { cacheMiddleware } from '../middlewares/cacheMiddleware.js';
 
 const router = Router();
 
@@ -28,7 +29,7 @@ const router = Router();
  *       404:
  *         description: Not Found
  */
-router.get('/', categoryController.getAllCategories);
+router.get('/', cacheMiddleware('categories:all', 60), categoryController.getAllCategories);
 
 /**
  * @swagger
@@ -53,7 +54,7 @@ router.get('/', categoryController.getAllCategories);
  *       404:
  *         description: Not Found
  */
-router.get('/:id', categoryController.getCategoryById);
+router.get('/:id', cacheMiddleware((req) => `categories:${req.params.id}`, 60), categoryController.getCategoryById);
 
 /**
  * @swagger
