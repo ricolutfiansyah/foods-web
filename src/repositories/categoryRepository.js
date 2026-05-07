@@ -3,6 +3,7 @@ import prisma from '../config/prisma.js';
 export const findAll = async () => {
     return prisma.category.findMany({
         orderBy: { name: 'asc' },
+        include: { _count: { select: { foods: true } } },
     });
 };
 

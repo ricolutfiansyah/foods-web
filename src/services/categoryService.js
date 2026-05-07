@@ -14,14 +14,17 @@ export const getCategoryById = async (id) => {
 };
 
 export const createCategory = async (data) => {
-    const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const categoryData = { ...data };
+
+    const slug = categoryData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    categoryData.slug = slug;
 
     const existingCategory = await categoryRepository.findBySlug(slug);
     if (existingCategory) {
         throw new AppError('Category with this name already exists', 409);
     }
 
-    return categoryRepository.create({ name: data.name, slug });
+    return categoryRepository.create(categoryData);
 };
 
 export const updateCategory = async (id, data) => {

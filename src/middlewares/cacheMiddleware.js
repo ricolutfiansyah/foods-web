@@ -11,6 +11,10 @@ export const cacheMiddleware = (key, ttl = 60) => {
     return async (req, res, next) => {
         const cacheKey = typeof key === 'function' ? key(req) : key;
 
+        if (!cacheKey) {
+            return next();
+        }
+
         try {
             const cached = await redis.get(cacheKey);
 

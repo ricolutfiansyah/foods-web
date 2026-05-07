@@ -47,7 +47,7 @@ const router = Router();
  *       404:
  *         description: Not Found
  */
-router.get('/', cacheMiddleware('foods:all', 60), foodController.getAllFoods);
+router.get('/', cacheMiddleware((req) => Object.keys(req.query).length > 0 ? null : 'foods:all', 60), foodController.getAllFoods);
 
 /**
  * @swagger

@@ -32,7 +32,6 @@ describe('Order Integration Tests', () => {
   const fakeId = '00000000-0000-0000-0000-000000000000';
 
   beforeAll(async () => {
-    // 1. Register & Login Admin
     await request(app).post('/api/v1/auth/register').send(adminUser);
     await prisma.user.update({
       where: { email: adminUser.email },
@@ -43,21 +42,18 @@ describe('Order Integration Tests', () => {
     });
     adminToken = adminLogin.body.data.accessToken;
 
-    // 2. Register & Login Normal User
     await request(app).post('/api/v1/auth/register').send(normalUser);
     const userLogin = await request(app).post('/api/v1/auth/login').send({
       email: normalUser.email, password: normalUser.password
     });
     userToken = userLogin.body.data.accessToken;
 
-    // 3. Register & Login Another User
     await request(app).post('/api/v1/auth/register').send(anotherUser);
     const anotherLogin = await request(app).post('/api/v1/auth/login').send({
       email: anotherUser.email, password: anotherUser.password
     });
     anotherToken = anotherLogin.body.data.accessToken;
 
-    // 4. Create category via Prisma
     const category = await prisma.category.upsert({
       where: { slug: 'test-category-order' },
       update: {},
@@ -65,7 +61,6 @@ describe('Order Integration Tests', () => {
     });
     testCategoryId = category.id;
 
-    // 5. Create food via Prisma
     const food = await prisma.food.create({
       data: {
         name: 'Test Food Order',
@@ -77,7 +72,6 @@ describe('Order Integration Tests', () => {
     });
     testFoodId = food.id;
 
-    // 6. Add food to normal user's cart
     await request(app)
       .post('/api/v1/cart')
       .set('Authorization', `Bearer ${userToken}`)
@@ -85,7 +79,6 @@ describe('Order Integration Tests', () => {
   });
 
   afterAll(async () => {
-    // Cleanup order: orderItems -> orders -> cartItems -> cart -> food -> category -> users
     await prisma.orderItem.deleteMany({});
     await prisma.order.deleteMany({});
     await prisma.cartItem.deleteMany({});

@@ -145,6 +145,35 @@ router.patch('/:id/status', authMiddleware, roleMiddleware, orderController.upda
 
 /**
  * @swagger
+ * /api/v1/orders/{id}/cancel:
+ *   patch:
+ *     summary: Cancel my order
+ *     tags: [Orders]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Order cancelled
+ *       400:
+ *         description: Bad Request (Only PENDING orders can be cancelled)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Not your order)
+ *       404:
+ *         description: Not Found
+ */
+router.patch('/:id/cancel', authMiddleware, orderController.cancelMyOrder);
+
+/**
+ * @swagger
  * /api/v1/admin/orders:
  *   get:
  *     summary: Get all orders (Admin only)
@@ -152,6 +181,29 @@ router.patch('/:id/status', authMiddleware, roleMiddleware, orderController.upda
  *     security:
  *       - BearerAuth: []
  *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by orderNumber or user name
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, PROCESSING, COMPLETED, CANCELLED]
+ *         description: Filter by order status
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter by start date (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter by end date (YYYY-MM-DD)
  *       - in: query
  *         name: page
  *         schema:
@@ -174,5 +226,6 @@ router.patch('/:id/status', authMiddleware, roleMiddleware, orderController.upda
  *       404:
  *         description: Not Found
  */
+router.get('/admin/orders', authMiddleware, roleMiddleware, orderController.getAllOrders);
 
 export default router;

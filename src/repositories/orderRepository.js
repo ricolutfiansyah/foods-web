@@ -3,6 +3,7 @@ import prisma from '../config/prisma.js';
 export const create = async (data, tx = prisma) => {
   return tx.order.create({
     data: {
+      orderNumber: data.orderNumber,
       userId: data.userId,
       totalPrice: data.totalPrice,
       note: data.note,
@@ -41,8 +42,28 @@ export const findById = async (id) => {
   });
 };
 
-export const findAll = async ({ skip, take }) => {
+export const findAll = async ({ skip, take, search, status, startDate, endDate }) => {
+  const where = {};
+
+  if (status) where.status = status;
+  if (search) {
+    where.OR = [
+      { orderNumber: { contains: search, mode: 'insensitive' } },
+      { user: { name: { contains: search, mode: 'insensitive' } } }
+    ];
+  }
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      where.createdAt.lte = end;
+    }
+  }
+
   return prisma.order.findMany({
+    where,
     skip,
     take,
     include: {
@@ -68,6 +89,25 @@ export const countByUserId = async (userId) => {
   return prisma.order.count({ where: { userId } });
 };
 
-export const countAll = async () => {
-  return prisma.order.count();
+export const countAll = async ({ search, status, startDate, endDate } = {}) => {
+  const where = {};
+
+  if (status) where.status = status;
+  if (search) {
+    where.OR = [
+      { orderNumber: { contains: search, mode: 'insensitive' } },
+      { user: { name: { contains: search, mode: 'insensitive' } } }
+    ];
+  }
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      where.createdAt.lte = end;
+    }
+  }
+
+  return prisma.order.count({ where });
 };
